@@ -1,3 +1,5 @@
+# /Applications/Postgres.app/Contents/Versions/12/bin/psql -p5432 "postgres"
+
 import numpy as np
 import matplotlib.pyplot as plt
 import psycopg2
@@ -36,9 +38,15 @@ yc = zoom(ys_max,portoyCim,portoDuration)
 # i=frame
 def animate(i):
     ax.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
+    # scat.set_colors('red')
     scat.set_offsets(offsets[i])
     #ax.set(xlim=(-120000+i*10, 165000-i*100), ylim=(-310000+i*100*2.09, 285000-i*10*2.09))
     ax.set(xlim=(-120000+i*xe, 165000-i*xd), ylim=(-310000+i*yb, 285000-i*yc))
+    
+
+    if i==200:
+        scat.set_color('red')
+    
 
 scale=1/3000000
 conn = psycopg2.connect("dbname=postgres user=postgres")
@@ -97,6 +105,7 @@ for i in offsets[0]:
 scat = ax.scatter(x,y,s=2,color='orange')
 #100 fps
 anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, repeat = False)
+#anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, fargs=, repeat = False)
 
 plt.draw()
 plt.show()
