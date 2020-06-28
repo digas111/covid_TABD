@@ -34,18 +34,33 @@ yb = zoom(ys_min,portoyBai,portoDuration)
 yc = zoom(ys_max,portoyCim,portoDuration)
 
 
+# deletes all taxis in (0,0) as they are inactive
+def cleanInactive(m):
+    n = []
+    for i in m:
+        if (i[0] != 0 and i[1] != 0):
+            n.append(i)
+    return n
+
+
 
 # i=frame
 def animate(i):
     ax.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
     # scat.set_colors('red')
-    scat.set_offsets(offsets[i])
-    #ax.set(xlim=(-120000+i*10, 165000-i*100), ylim=(-310000+i*100*2.09, 285000-i*10*2.09))
-    ax.set(xlim=(-120000+i*xe, 165000-i*xd), ylim=(-310000+i*yb, 285000-i*yc))
-    
 
-    if i==200:
-        scat.set_color('red')
+    # retira as coordenadas (0,0)
+    # newOffsets = cleanInactive(offsets[i])
+    # scat.set_offsets(newOffsets)
+
+    scat.set_offsets(offsets[i])
+    scat.set_color(colors[i])
+
+
+    #ax.set(xlim=(-120000+i*10, 165000-i*100), ylim=(-310000+i*100*2.09, 285000-i*10*2.09))
+    #ax.set(xlim=(-120000+i*xe, 165000-i*xd), ylim=(-310000+i*yb, 285000-i*yc))
+
+    
     
 
 scale=1/3000000
@@ -86,22 +101,39 @@ for row in results:
         ax.plot(xs,ys,color='black',lw='0.2')
 
 offsets = []
+colors = []
+
+#with open('myoffsets2.csv', 'r') as csvFile:
+
 with open('offsets3.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
-    i=0
     for row in reader:
         l = []
         for j in row:
             x,y = j.split()
             x = float(x)
-            y= float(y)
+            y = float(y)
             l.append([x,y])
         offsets.append(l)
 
+with open('simulateInfection.csv', 'r') as csvFile:
+    reader = csv.reader(csvFile)
+    for row in reader:
+        colorsIt = []
+        for j in row:
+            colorsIt.append(j)
+        colors.append(colorsIt)
+
+
+
+
 x,y = [],[]
 for i in offsets[0]:
-    x.append(i[0])
-    y.append(i[1])
+    if (i[0] != 0 and i[1] != 0):
+        x.append(i[0])
+        y.append(i[1])
+
+
 scat = ax.scatter(x,y,s=2,color='orange')
 #100 fps
 anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, repeat = False)
