@@ -14,7 +14,7 @@ conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 cursor_psql = conn.cursor()
 
-sql = """select distinct taxi from tracks order by 1 """
+sql = """select distinct taxi from tracks order by 1"""
 cursor_psql.execute(sql)
 results = cursor_psql.fetchall()
 
@@ -22,7 +22,7 @@ taxis_x ={}
 taxis_y ={}
 
 ts_i = 1570665600
-ts_f = 1570667000
+ts_f = 1570752000
 
 array_size = int(24*60*60/step)
 
@@ -30,10 +30,13 @@ for row in results:
     taxis_x[int(row[0])] = np.zeros(array_size)
     taxis_y[int(row[0])] = np.zeros(array_size)
 
+
 for i in range(ts_i,ts_f,10):
     sql = "select taxi,st_pointn(proj_track," + str(i) + "-ts) from tracks where ts<" + str(i) + " and ts+st_numpoints(proj_track)>" + str(i)
     cursor_psql.execute(sql)
     results = cursor_psql.fetchall()
+    if (i==ts_i+10):
+        print(results)
     for row in results:
         x,y = row[1].coords
         taxis_x[int(row[0])][int((i-ts_i)/10)] = x
@@ -44,13 +47,28 @@ offsets = []
 for i in range(array_size):
     l = []
     for j in taxis_x:
-        l.append([taxis_x[j][i],taxis_y[j][i]])
+        l.append([taxis_x[j][i],taxis_y[j][i],'green'])
     offsets.append(l)
 
 
+# print(offsets)
+
 for i in offsets:
-    print("%f %f" %(i[0][0],i[0][1]),end='')
+    print("%f %f %s" %(i[0][0],i[0][1],i[0][2]),end='')
     for j in range(1,len(i)):
-        print(",%f %f" %(i[j][0],i[j][1]),end='')
+        print(",%f %f %s" %(i[j][0],i[j][1],i[j][2]),end='')
     print("")
+
+# for i in offsets:
+#     print("%f %f" %(i[0][0],i[0][1]),end='')
+#     for j in range(1,len(i)):
+#         print(",%f %f" %(i[j][0],i[j][1]),end='')
+#     print("")
+
+
+
 conn.close()
+
+
+
+
