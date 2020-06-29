@@ -46,28 +46,10 @@ def cleanInactive(m):
 
 # i=frame
 def animate(i):
-
-    offsets = []
-    colors  = []
-    with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv', 'r') as csvFile:
-        reader = csv.reader(csvFile)
-        frame=0
-        for line in reader:  
-            if(frame == i):
-                for item in line:
-                    x,y,color = item.split()
-                    x = float(x)
-                    y = float(y)
-                    offsets.append([x,y])
-                    colors.append(color)
-                break
-            frame+=1   
-
-  
     ax.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
 
-    scat.set_offsets(offsets)
-    scat.set_color(colors)
+    scat.set_offsets(offsets[i])
+    scat.set_color(colors[i])
 
     #ax.set(xlim=(-120000+i*10, 165000-i*100), ylim=(-310000+i*100*2.09, 285000-i*10*2.09))
     #ax.set(xlim=(-120000+i*xe, 165000-i*xd), ylim=(-310000+i*yb, 285000-i*yc))
@@ -76,7 +58,7 @@ def animate(i):
     
 
 scale=1/3000000
-conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
+conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 
 # xs_min, xs_max, ys_min, ys_max = -120000, 165000, -310000, 285000
@@ -114,14 +96,12 @@ for row in results:
 
 offsets = []
 colors = []
-nInfected = []
-"""
-with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv', 'r') as csvFile:
+
+with open('simulateInfection.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
         l = []
         colorsIt = []
-        nInfected.append(row[0])
         for j in range(1,len(row)):
             x,y,color = row[j].split()
             x = float(x)
@@ -139,31 +119,6 @@ for i in offsets[0]:
     if (i[0] != 0 and i[1] != 0):
         x.append(i[0])
         y.append(i[1])
-"""
-
-
-
-
-
-x,y = [],[]
-colors  = []
-with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv', 'r') as csvFile:
-    reader = csv.reader(csvFile)
-    frame=0
-    for line in reader: 
-        print(frame) 
-        if(frame == 0):
-            for item in line:
-                x,y,color = item.split()
-                x = float(x)
-                y = float(y)
-                x.append(x)
-                y.append(y)
-                colors.append(color)
-            break
-        frame+=1
-
-
 
 scat = ax.scatter(x,y,s=2,color='orange')
 #100 fps
