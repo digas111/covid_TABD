@@ -24,25 +24,25 @@ colors = []
 nInfected = []
 infectedByDistrict = []
 
-distritos = {
-    "1" : "AVEIRO",
-    "2" : "BEJA",
-    "3" : "BRAGA",
-    "4" : "BRAGANÇA",
-    "5" : "CASTELO BRANCO",
-    "6" : "COIMBRA",
-    "7" : "ÉVORA",
-    "8" : "FARO",
-    "9" : "GUARDA",
-    "10" : "LEIRIA",
-    "11" : "LISBOA",
-    "12" : "PORTALEGRE",
-    "13" : "PORTO",
-    "14" : "SANTARÉM",
-    "15" : "SETÚBAL",
-    "16" : "VIANA DO CASTELO",
-    "17" : "VILA REAL",
-    "18" : "VISEU"
+districts = {
+    "AVEIRO" : "0",
+    "BEJA" : "1",
+    "BRAGA" : "2",
+    "BRAGANÇA" : "3",
+    "CASTELO BRANCO" : "4",
+    "COIMBRA" : "5",
+    "ÉVORA" : "6",
+    "FARO" : "7",
+    "GUARDA" : "8",
+    "LEIRIA" : "9",
+    "LISBOA" : "10",
+    "PORTALEGRE" : "11",
+    "PORTO" : "12",
+    "SANTARÉM" : "13",
+    "SETÚBAL" : "14",
+    "VIANA DO CASTELO" : "15",
+    "VILA REAL" : "16",
+    "VISEU" : "17"
 }
 
 # sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(pontoX) + ", " + str(pontoY) +"), 3763))"
@@ -56,9 +56,21 @@ firstTaxiLisboa = random.sample(taxisLisboa,1)[0]
 
 #### FUNCTIONS ####
 
-def updateInfectedByDistrict:
+def updateInfectedByDistrict(time):
+    global infectedByDistrict
+
+    conn = psycopg2.connect("dbname=postgres user=postgres")
+    register(conn)
+    cursor_psql = conn.cursor()
 
 
+    for id in infectedID:
+        sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[time][id][0]) + ", " + str(offsets[time][id][1]) +"), 3763))"
+        cursor_psql.execute(sql)
+        results = cursor_psql.fetchall()
+        print(int(districts.get(results[0][0])))
+        # districtID = int(districts.get(results[0][0]))
+        # infectedByDistrict[time][districtID] += 1
 
 def infectTaxi(frame,row):
 
@@ -79,7 +91,14 @@ def infectTaxi(frame,row):
 with open('offsets3.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
+        
+        districtaux = []
+        for district in districts:
+            districtaux.append(0)
+        infectedByDistrict.append(districtaux)
+
         nInfected.append(0)
+
         l = []
         inf = []
         color = []
@@ -100,7 +119,7 @@ infectTaxi(0,firstTaxiPorto)
 infectTaxi(0,firstTaxiLisboa)
 
 for i in range(1,len(offsets)):
-
+    #updateInfectedByDistrict(i)
     for j in range(0,len(offsets[0])):
         if (offsets[i][j] != [0,0]):
             if (infectionPercentages[i][j] < 100):
@@ -112,9 +131,17 @@ for i in range(1,len(offsets)):
                 if (infectionPercentages[i][j] >= 100):
                     infectTaxi(i,j)
 
+#print(infectedByDistrict)
+
+# f = open("simulateInfection.csv", "w")
+
+
+
+# f.write("Woops! I have deleted the content!")
+# f.close()
 
 for i in range(0,len(offsets)):
-    print("%d,%f %f %s" %(nInfected[i],offsets[i][0][0],offsets[i][0][1],colors[i][0]),end='')
+    print("%f %f %s" %(offsets[i][0][0],offsets[i][0][1],colors[i][0]),end='')
     for j in range(0,len(offsets[i])):
         print(",%f %f %s" %(offsets[i][j][0],offsets[i][j][1],colors[i][j]),end='')
     print("")
