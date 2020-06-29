@@ -2,3 +2,4 @@
 * text=auto
 offsets3.csv filter=lfs diff=lfs merge=lfs -text
 cont_aad_caop2018.sql filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text

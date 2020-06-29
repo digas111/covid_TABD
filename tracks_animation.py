@@ -102,30 +102,24 @@ for row in results:
 
 offsets = []
 colors = []
-
-#with open('myoffsets2.csv', 'r') as csvFile:
-
-with open('offsets3.csv', 'r') as csvFile:
-    reader = csv.reader(csvFile)
-    for row in reader:
-        l = []
-        for j in row:
-            x,y = j.split()
-            x = float(x)
-            y = float(y)
-            l.append([x,y])
-        offsets.append(l)
+nInfected = []
 
 with open('simulateInfection.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
+        l = []
         colorsIt = []
-        for j in row:
-            colorsIt.append(j)
+        nInfected.append(row[0])
+        for j in range(1,len(row)):
+            x,y,color = row[j].split()
+            x = float(x)
+            y = float(y)
+            colorsIt.append(color)
+            l.append([x,y])
+        offsets.append(l)
         colors.append(colorsIt)
 
-
-
+#print(nInfected)
 
 x,y = [],[]
 for i in offsets[0]:
@@ -138,6 +132,8 @@ scat = ax.scatter(x,y,s=2,color='orange')
 #100 fps
 anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, repeat = False)
 #anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, fargs=, repeat = False)
+
+
 
 plt.draw()
 plt.show()
