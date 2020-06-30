@@ -8,6 +8,12 @@ import csv
 from postgis import Polygon,MultiPolygon
 from postgis.psycopg import register
 import random
+import os
+
+conn = psycopg2.connect("dbname=postgres user=postgres")
+register(conn)
+cursor_psql = conn.cursor()
+
 
 ##########
 
@@ -22,7 +28,7 @@ infectedID = []
 infectionPercentages = []
 colors = []
 nInfected = []
-infectedByDistrict = []
+infectionsByDistrict = []
 
 districts = {
     "AVEIRO" : "0",
@@ -45,8 +51,6 @@ districts = {
     "VISEU" : "17"
 }
 
-# sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(pontoX) + ", " + str(pontoY) +"), 3763))"
-
 taxisPorto = {161, 238, 110, 978, 306, 723, 247, 664, 187, 958}
 taxisLisboa= {1602, 836, 1285, 872, 1163, 815, 1180, 817, 1500, 1564}
 firstTaxiPorto = random.sample(taxisPorto,1)[0]
@@ -56,49 +60,42 @@ firstTaxiLisboa = random.sample(taxisLisboa,1)[0]
 
 #### FUNCTIONS ####
 
-def updateInfectedByDistrict(time):
-    global infectedByDistrict
-
-    conn = psycopg2.connect("dbname=postgres user=postgres")
-    register(conn)
-    cursor_psql = conn.cursor()
-
-
-    for id in infectedID:
-        sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[time][id][0]) + ", " + str(offsets[time][id][1]) +"), 3763))"
-        cursor_psql.execute(sql)
-        results = cursor_psql.fetchall()
-        print(int(districts.get(results[0][0])))
-        # districtID = int(districts.get(results[0][0]))
-        # infectedByDistrict[time][districtID] += 1
-
 def infectTaxi(frame,row):
 
     global infectionPercentages
     global infectedID
     global nInfected
+    global infectionsByDistrict
 
     numberInfect = nInfected[frame]+1
 
     infectedID.append(row)
+
+    idDistrict = None
+
+    sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[frame][row][0]) + ", " + str(offsets[frame][row][1]) +"), 3763))"
+    cursor_psql.execute(sql)
+    results = cursor_psql.fetchall()
+    if (results != []):
+        idDistrict = int(districts.get(results[0][0]))
+    else:
+        print("PONTO FORA DO MAPA: " + str(offsets[frame][row][0]) + " " + str(offsets[frame][row][1]))
+
     for i in range(frame,len(infectionPercentages)):
+        if (idDistrict != None):
+            infectionsByDistrict[i][idDistrict] += 1
         nInfected[i] = numberInfect
         infectionPercentages[i][row]=100
         colors[i][row]="#cd0000" #red
 
 ###################
 
+
 with open('offsets3.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
-        
-        districtaux = []
-        for district in districts:
-            districtaux.append(0)
-        infectedByDistrict.append(districtaux)
-
         nInfected.append(0)
-
+        infectionsByDistrict.append([0]*len(districts))
         l = []
         inf = []
         color = []
@@ -119,7 +116,6 @@ infectTaxi(0,firstTaxiPorto)
 infectTaxi(0,firstTaxiLisboa)
 
 for i in range(1,len(offsets)):
-    #updateInfectedByDistrict(i)
     for j in range(0,len(offsets[0])):
         if (offsets[i][j] != [0,0]):
             if (infectionPercentages[i][j] < 100):
@@ -131,17 +127,35 @@ for i in range(1,len(offsets)):
                 if (infectionPercentages[i][j] >= 100):
                     infectTaxi(i,j)
 
-#print(infectedByDistrict)
+conn.close()
 
-# f = open("simulateInfection.csv", "w")
+if os.path.exists("simulateInfection.csv"):
+    os.remove("simulateInfection.csv")
 
-
-
-# f.write("Woops! I have deleted the content!")
-# f.close()
+simulateInfectionf = open("simulateInfection.csv", "a")
 
 for i in range(0,len(offsets)):
-    print("%f %f %s" %(offsets[i][0][0],offsets[i][0][1],colors[i][0]),end='')
+    firstPrint = True
     for j in range(0,len(offsets[i])):
-        print(",%f %f %s" %(offsets[i][j][0],offsets[i][j][1],colors[i][j]),end='')
-    print("")
+        if (offsets[i][j] != [0,0]):
+            if (firstPrint):
+                simulateInfectionf.write(str(offsets[i][j][0]) + " " + str(offsets[i][j][1]) + " " + colors[i][j])
+                firstPrint = False
+            else:
+                simulateInfectionf.write("," + str(offsets[i][j][0]) + " " + str(offsets[i][j][1]) + " " + colors[i][j])
+    simulateInfectionf.write("\n")
+simulateInfectionf.close()
+
+
+
+if os.path.exists("countInfected.csv"):
+    os.remove("countInfected.csv")
+
+countInfected = open("countInfected.csv", "a")
+
+for i in range(0,len(nInfected)):
+    countInfected.write(str(nInfected[i]))
+    for j in infectionsByDistrict[i]:
+        countInfected.write("," + str(j))
+    countInfected.write("\n")
+countInfected.close()

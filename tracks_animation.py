@@ -129,11 +129,8 @@ print("ANTES DA FUNCANIMATION")
 anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
 
 print("DEPOIS DA FUNCANIMATION")
-#anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, fargs=, repeat = False)
 
 
 
 plt.draw()
-print("DEPOIS DO DRAW")
 plt.show()
-print("DEPOIS DO SHPW")
