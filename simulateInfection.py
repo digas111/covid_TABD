@@ -15,7 +15,7 @@ import datetime
 start_time = time.time()
 
 
-conn = psycopg2.connect("dbname=postgres user=postgres")
+conn = psycopg2.connect("dbname=tabd user=postgres password = 11223344Ab")
 register(conn)
 cursor_psql = conn.cursor()
 
@@ -99,7 +99,7 @@ def infectTaxi(frame,row):
 
 ###################
 
-with open('offsets3.csv', 'r') as csvFile:
+with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\offsets3.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
         nInfected.append(0)
