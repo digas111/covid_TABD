@@ -9,6 +9,8 @@ import datetime
 import csv
 from postgis import Polygon,MultiPolygon
 from postgis.psycopg import register
+from textwrap import wrap
+
 
 ts_i = 1570665600
 
@@ -62,25 +64,56 @@ conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
 register(conn)
 
 
-fig = plt.figure(figsize=(width_in_inches*scale*4, height_in_inches*scale*1.05))
+fig = plt.figure(figsize=(width_in_inches*scale*4, height_in_inches*scale*1.05), )
 
 axPortugal = fig.add_subplot(1,3,1)
-axPortugal.axis('on')
+axPortugal.axis('off')
 axPortugal.set(xlim=(xs_min, xs_max), ylim=(ys_min, ys_max))
 
 axPorto = fig.add_subplot(2,3,2)
-axPorto.axis('on')
+axPorto.axis('off')
 #axPorto.set(xlim=(-54900,21600), ylim = (148000, 200500))
+axPorto.set_title("Concelhos: PORTO, VILA NOVA DE GAIA, MATOSINHOS, MAIA", fontsize = 'medium', y=-0.10)
+
 
 axLisboa = fig.add_subplot(2,3,5)
-axLisboa.axis('on')
+axLisboa.axis('off')
 #axLisboa.set(xlim=(-118900,-56100), ylim=(-109900,-38300))
+axLisboa.set_title("\n".join(wrap("Concelhos: LISBOA, OEIRAS, CASCAIS, SINTRA, AMADORA, ODIVELAS, LOURES, ALMADA, SEIXAL, MOITA")), fontsize = 'small', y=-0.10)
+
+# numero de infeçoes/tempo (curva)
+axInfections = fig.add_subplot(2,3,3)
+axInfections.axis('on')
+axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
+axInfections.set_ylabel('Infetados')
+axInfections.set_title("Curva de infeção", fontsize = 'medium')
+
+# numero de infetados por distrito (barras)
+axInfectedDistrict = fig.add_subplot(2,3,6)
+axInfectedDistrict.axis('on')
+labels = ["AVEIRO", "BEJA" ,"BRAGA", "BRAGANÇA", "CASTELO BRANCO", "COIMBRA", "ÉVORA", "FARO", "GUARDA", "LEIRIA", "LISBOA" , "PORTALEGRE" , "PORTO" , "SANTARÉM", "SETÚBAL" , "V.CASTELO" ,"VILA REAL" , "VISEU" ]
+values = [1,2,3,4,5,6,7,8,9, 10, 11, 12, 13 ,14 ,15, 16, 17, 18]
+
+y_pos = np.arange(len(labels))
+
+axInfectedDistrict.barh(y_pos, values, align='center')
+axInfectedDistrict.set_yticks(y_pos)
+axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
+axInfectedDistrict.invert_yaxis()
+axInfectedDistrict.set_xlabel("Nº infetados")
+axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
+axInfectedDistrict.set(xlim=(0, 20))
+
+for i , v in enumerate(values):
+    axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
+
+
 
 
 cursor_psql = conn.cursor()
 
 
-#-------------------------------------PLOT DE PORTUGAL---------------------
+#-------------------------------------PLOT DE PORTUGAL----------------------------------------------------------------------
 
 sql = "select distrito,st_union(proj_boundary) from cont_aad_caop2018 group by distrito"
 
@@ -106,7 +139,7 @@ for row in results:
         axPortugal.plot(xs,ys,color='black',lw='0.2')
 
 
-#------------------------------PLOT DO PORTO----------------------
+#------------------------------PLOT DO PORTO--------------------------------------------------------------------------------------------
 
 
 sql = "select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'PORTO' or concelho = 'VILA NOVA DE GAIA' or concelho = 'MATOSINHOS' or concelho = 'MAIA' group by distrito"
@@ -135,7 +168,8 @@ for row in results:
         axPorto.plot(xs,ys,color='black',lw='0.2')
 
 
-#----------------------------------PLOT DE LISBOA------------------------
+#----------------------------------PLOT DE LISBOA----------------------------------------------------------------------------------------------
+
 sql = "select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'LISBOA' or concelho = 'OEIRAS' or concelho = 'CASCAIS' or concelho = 'SINTRA' or concelho = 'AMADORA' or concelho = 'ODIVELAS' or concelho = 'LOURES' or concelho = 'ALMADA' or concelho = 'SEIXAL' or concelho = 'MOITA' and (distrito = 'LISBOA' or distrito = 'SET┌BAL') group by distrito"
 
 # select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'LISBOA' or concelho = 'OEIRAS' or concelho = 'CASCAIS' or concelho = 'SINTRA' or concelho = 'AMADORA' or concelho = 'ODIVELAS' or concelho = 'LOURES' or concelho = 'ALMADA' or concelho = 'SEIXAL' or concelho = 'MOITA' and (distrito = 'LISBOA' or distrito = 'SET┌BAL') group by distrito
@@ -163,7 +197,7 @@ for row in results:
 
 offsets = []
 colors = []
-
+"""
 with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
@@ -193,7 +227,7 @@ scat = axPortugal.scatter(x,y,s=2,color='orange')
 
 
 anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
-
+"""
 #anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, fargs=, repeat = False)
 
 
