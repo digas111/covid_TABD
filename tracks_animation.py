@@ -17,7 +17,6 @@ width_in_inches = (xs_max-xs_min)/0.0254*1.1
 height_in_inches = (ys_max-ys_min)/0.0254*1.1
 
 
-
 portoxEsq = -56510
 portoxDir = -22614
 portoyCim = 182294
@@ -36,29 +35,31 @@ yb = zoom(ys_min,portoyBai,portoDuration)
 yc = zoom(ys_max,portoyCim,portoDuration)
 
 
-# deletes all taxis in (0,0) as they are inactive
-def cleanInactive(m):
-    n = []
-    for i in m:
-        if (i[0] != 0 and i[1] != 0):
-            n.append(i)
-    return n
-
-
-
 # i=frame
 def animate(i):
+    global reader
+
     axPortugal.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
 
-    scat.set_offsets(offsets[i])
-    scat.set_color(colors[i])
+    offsets = []
+    colors = []
 
-    
-    
+    line = next(reader)
+    for row in line:
+        x,y,color = row.split()
+        x = float(x)
+        y = float(y)
+        offsets.append([x,y])
+        colors.append(color)
+
+
+    scat.set_offsets(offsets)
+    scat.set_color(colors)
+
     
 
 scale=1/3000000
-conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
+conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 
 
@@ -164,39 +165,41 @@ for row in results:
 offsets = []
 colors = []
 
-with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv', 'r') as csvFile:
-    reader = csv.reader(csvFile)
-    for row in reader:
-        l = []
-        colorsIt = []
-        for j in range(1,len(row)):
-            x,y,color = row[j].split()
-            x = float(x)
-            y = float(y)
-            colorsIt.append(color)
-            l.append([x,y])
-        offsets.append(l)
-        colors.append(colorsIt)
+# with open('simulateInfection.csv', 'r') as csvFile:
+#     reader = csv.reader(csvFile)
+#     for row in reader:
+#         l = []
+#         colorsIt = []
+#         for j in range(1,len(row)):
+#             x,y,color = row[j].split()
+#             x = float(x)
+#             y = float(y)
+#             colorsIt.append(color)
+#             l.append([x,y])
+#         offsets.append(l)
+#         colors.append(colorsIt)
 
 
 #print(nInfected)
 
-x,y = [],[]
-for i in offsets[0]:
-    if (i[0] != 0 and i[1] != 0):
-        x.append(i[0])
-        y.append(i[1])
+with open('simulateInfection.csv', 'r') as csvFile:
+    reader = csv.reader(csvFile)
 
-scat = axPortugal.scatter(x,y,s=2,color='orange')
-#100 fps
+    line = next(reader)
 
+    x,y = [],[]
+    for i in line:
+        if (i[0] != 0 and i[1] != 0):
+            x.append(i[0])
+            y.append(i[1])
 
-
-anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
-
-#anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, fargs=, repeat = False)
-
+    scat = axPortugal.scatter(x,y,s=2,color='orange')
+    #100 fps
 
 
-plt.draw()
-plt.show()
+
+    anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
+
+
+    plt.draw()
+    plt.show()

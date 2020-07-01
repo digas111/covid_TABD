@@ -136,6 +136,7 @@ for i in range(1,len(offsets)):
                 if (infectionPercentages[i][j] >= 100):
                     infectTaxi(i,j)
 
+# Percorrer primeiro por coluna e depois por linha para tornar o ficheiro mais eficiente
 
 for i in range(0,len(offsets)):
     for j in range(0,len(offsets[i])):
@@ -146,15 +147,28 @@ for i in range(0,len(offsets)):
                 cursor_psql.execute(sql)
                 results = cursor_psql.fetchall()
                 if (results != []):
-                    idDistrict = int(districts.get(results[0][0]))    
+                    idDistrict = int(districts.get(results[0][0]))
                 else:
                     print("PONTO FORA DO MAPA: " + str(offsets[i][j][0]) + " " + str(offsets[i][j][1]))
                 if (idDistrict != None):
                     infectedByDistrict[i][idDistrict] +=1
                     k = i+1
-                    while (k<len(offsets) and offsets[k][j] != [0,0]):
-                        infectedByDistrict[k][idDistrict] +=1
+                    while (k<len(offsets) and offsets[k][j] == [0,0]):
+                        infectedByDistrict[k][idDistrict] += 1
                         k+=1
+
+                    k = i+1
+                    while (k<len(offsets)):
+                        sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[k][j][0]) + ", " + str(offsets[k][j][1]) +"), 3763))"
+                        cursor_psql.execute(sql)
+                        results = cursor_psql.fetchall()
+                        if (results == []):
+                            print("PONTO FORA DO MAPA TRATADO")
+                            infectedByDistrict[k][idDistrict] += 1
+                        else:
+                            break
+                        k+=1
+                    
 
 #####
 
