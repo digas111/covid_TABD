@@ -36,25 +36,30 @@ import os
 
 
 
-if os.path.exists("fasttest.csv"):
-    os.remove("fasttest.csv")
+# if os.path.exists("fasttest.csv"):
+#     os.remove("fasttest.csv")
+
+# for i in range(0,10):
+#     first = True
+#     for j in range(20,50):
+#         if (first):
+#             simulateInfectionf = open("fasttest.csv", "a")
+#             simulateInfectionf.write(str(i) + " " + str(j))
+#             simulateInfectionf.close()
+#             first = False
+#         else:
+#             simulateInfectionf = open("fasttest.csv", "a")
+#             simulateInfectionf.write("," + str(i) + " " + str(j))
+#             simulateInfectionf.close()
+#     simulateInfectionf = open("fasttest.csv", "a")
+#     simulateInfectionf.write("\n")
+#     simulateInfectionf.close()
+
+
 
 for i in range(0,10):
-    first = True
-    for j in range(20,50):
-        if (first):
-            simulateInfectionf = open("fasttest.csv", "a")
-            simulateInfectionf.write(str(i) + " " + str(j))
-            simulateInfectionf.close()
-            first = False
-        else:
-            simulateInfectionf = open("fasttest.csv", "a")
-            simulateInfectionf.write("," + str(i) + " " + str(j))
-            simulateInfectionf.close()
-    simulateInfectionf = open("fasttest.csv", "a")
-    simulateInfectionf.write("\n")
-    simulateInfectionf.close()
-
+    if (i+1 < 5):
+        print("i:" + str(i))
 
 
 
