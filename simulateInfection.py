@@ -9,13 +9,15 @@ from postgis import Polygon,MultiPolygon
 from postgis.psycopg import register
 import random
 import os
+import shutil
 import time
 import datetime
+import multiprocessing
 
 start_time = time.time()
 
 
-conn = psycopg2.connect("dbname=tabd user=postgres password = 11223344Ab")
+conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 cursor_psql = conn.cursor()
 
@@ -99,7 +101,7 @@ def infectTaxi(frame,row):
 
 ###################
 
-with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\offsets3.csv', 'r') as csvFile:
+with open('offsets3.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
         nInfected.append(0)
@@ -118,7 +120,6 @@ with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\offsets3.csv', 'r') as csvFile:
         offsets.append(l)
         infectionPercentages.append(inf)
         colors.append(color)
-
 
 # Infect first taxis
 infectTaxi(0,firstTaxiPorto)
@@ -170,63 +171,53 @@ for i in range(0,len(offsets)):
                         k+=1
                     
 
-#####
+##### WRITE TO FILES #####
 
-if os.path.exists("simulateInfection.csv"):
-    os.remove("simulateInfection.csv")
+folder = os.getcwd()+"/data/"
 
-simulateInfectionf = open("simulateInfection.csv", "a")
+try:
+    os.mkdir(folder)
+except OSError:
+    try:
+        shutil.rmtree(folder)
+    except OSError:
+        print("ERROR CREATING FOLDER")
+    try:
+        os.mkdir(folder)
+    except OSError:
+        print("ERROR CREATING FOLDER")
 
-for i in range(0,len(offsets)):
-    firstPrint = True
-    for j in range(0,len(offsets[i])):
-        if (offsets[i][j] != [0,0]):
-            if (firstPrint):
-                simulateInfectionf.write(str(offsets[i][j][0]) + " " + str(offsets[i][j][1]) + " " + colors[i][j])
-                firstPrint = False
-            else:
-                simulateInfectionf.write("," + str(offsets[i][j][0]) + " " + str(offsets[i][j][1]) + " " + colors[i][j])
-    simulateInfectionf.write("\n")
-simulateInfectionf.close()
+#### Create File with offsets and infections #### -> new thread
 
-#####
+with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
+    sifw = csv.writer(sif)
+    for rf, rc in zip(offsets,colors):
+        row = []
+        for cf, cc in zip(rf,rc):
+            if (cf != [0,0]):
+                row.append(str(cf[0]) + " " + str(cf[1]) + " " + cc)
+        sifw.writerow(row)
 
-if os.path.exists("nInfected.csv"):
-    os.remove("nInfected.csv")
+#### Create file with number of infected #### -> new thread
 
-nInfectedf = open("nInfected.csv", "a")
+with open(folder + 'nInfected.csv', 'w', newline='') as nif:
+    nifw = csv.writer(nif)
+    for infected in nInfected:
+        nifw.writerow(infected)
 
-for infected in nInfected:
-    nInfectedf.write(str(infected)+"\n")
-nInfectedf.close()
+#### Create file with new infections by dristrict #### -> new thread
 
-#####
+with open(folder + 'infectionsByDistrict.csv', 'w', newline='') as isbdf:
+    isbdfw = csv.writer(isbdf)
+    for row in infectedByDistrict:
+        isbdfw.writerow(row)
 
-if os.path.exists("infectionsByDistrict.csv"):
-    os.remove("infectionsByDistrict.csv")
+#### Create file with infected by district #### -> new thread
 
-infectionsByDistrictf = open("infectionsByDistrict.csv", "a")
-
-for ts in infectionsByDistrict:
-    infectionsByDistrictf.write(str(ts[0]))
-    for district in range(1,len(ts)):
-        infectionsByDistrictf.write("," + str(ts[district]))
-    infectionsByDistrictf.write("\n")
-infectionsByDistrictf.close()
-
-#####
-
-if os.path.exists("infectedByDistrict.csv"):
-    os.remove("infectedByDistrict.csv")
-
-infectedByDistrictf = open("infectedByDistrict.csv", "a")
-
-for ts in infectedByDistrict:
-    infectedByDistrictf.write(str(ts[0]))
-    for j in range(1,len(ts)):
-        infectedByDistrictf.write("," + str(ts[j]))
-    infectedByDistrictf.write("\n")
-infectedByDistrictf.close()
+with open(folder + 'infectedByDistrict.csv', 'w', newline='') as idbdf:
+    idbdfw = csv.writer(idbdf)
+    for row in infectedByDistrict:
+        idbdfw.writerow(row)
 
 
 conn.close()

@@ -1,6 +1,7 @@
 from random import randrange
 import csv
 import os
+import shutil
 
 # print(randrange(0, 2))
 
@@ -55,11 +56,28 @@ import os
 #     simulateInfectionf.write("\n")
 #     simulateInfectionf.close()
 
+line1 = [1,2,3,4,5,6]
+line2 = [6,5,4,3,2,1]
+
+for i, j in zip(line1,line2):
+    print("i:" + str(i) + " j:" + str(j))
 
 
-for i in range(0,10):
-    if (i+1 < 5):
-        print("i:" + str(i))
 
+folder = os.getcwd()+"/data/"
 
+try:
+    os.mkdir(folder)
+except OSError:
+    try:
+        shutil.rmtree(folder)
+    except OSError:
+        print("ERROR CREATING FOLDER")
+    try:
+        os.mkdir(folder)
+    except OSError:
+        print("ERROR CREATING FOLDER")
 
+with open(folder + 'simulateInfection.csv', 'w', newline='') as file:
+    filewriter = csv.writer(file)
+    filewriter.writerow(["tudo"])
