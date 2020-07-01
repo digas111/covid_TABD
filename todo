@@ -1,10 +1,10 @@
 Função infeção: check
-Contador de infeção:
-Curvatura de infeção:
+Contador de infeção: 
+Curvatura de infeção: 
 Gráfico de infeções por distrito:
     Qual o mais/menos infetado
-Gradiente cor de infeção:
-Pintar distrito caso entre infetado:
+Gradiente cor de infeção: 
+Pintar distrito caso entre infetado: 
 Simulação diferente:
     A começar no Porto:
     A começar em Lisboa:
@@ -12,3 +12,8 @@ Simulação diferente:
     Com a probabilidade de infeção reduzida (simular se as pessoas tomam cuidados de segurança)
         às 9h/13h/14h e 18h uma função probabilistica escolhe de dentro do grupo dos que estão em vias de ficar 100% infetados e esses "sortudos" desinfetavam-se dentro de um grau de desinfeção 
 Ranking de taxis que infetam mais
+
+
+Lista de pontos que não pertencem a Portugal:
+    x:-45637.027603 y:164724.334422 -> ponto muito perto da Foz, possivel imprecisão de GPS
+
