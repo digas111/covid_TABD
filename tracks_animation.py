@@ -194,11 +194,7 @@ scat = axPortugal.scatter(x,y,s=2,color='orange')
 
 anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
 
-<<<<<<< HEAD
 #anim = FuncAnimation(fig, animate, interval=10, frames=len(offsets)-1, fargs=, repeat = False)
-=======
-print("DEPOIS DA FUNCANIMATION")
->>>>>>> 973e54b4ec21652b6588d5d7c36c73bb41264dea
 
 
 
