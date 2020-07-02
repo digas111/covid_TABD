@@ -143,9 +143,13 @@ for j in range(0,len(offsets[0])):
     i=0
     results = None
 
-    sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
-    cursor_psql.execute(sql)
-    results = cursor_psql.fetchall()
+    while (i<len(offsets) and (offsets[i][j] == [0,0] or infectionPercentages[i][j] < 100)):
+        i+=1
+
+    if (i<len(offsets)):
+        sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
+        cursor_psql.execute(sql)
+        results = cursor_psql.fetchall()
 
     while (i<len(offsets) and (offsets[i][j] == [0,0] or results == [])):
         i+=1
@@ -202,7 +206,7 @@ with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
 
 #### Create file with number of infected an file with R #### -> new thread
 
-with open(folder + 'nInfected.csv', 'w', newline='') as nif, open(folder + 'rvalues.csv', 'w', newline='') as rv:
+with open(folder + 'infections.csv', 'w', newline='') as nif, open(folder + 'rvalues.csv', 'w', newline='') as rv:
 
     nifw = csv.writer(nif)
     rvw = csv.writer(rv)

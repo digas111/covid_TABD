@@ -99,7 +99,7 @@ def animate(i):
     
 
 scale=1/3000000
-conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
+conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 
 
@@ -192,9 +192,9 @@ axInfections.set_title("Curva de infeção", fontsize = 'medium')
 
 #-----------------------------ABERTURA DE FICHEIROS E CHAMADA DE ANIMAÇÃO----------------------------------------------------------------------------------------------
 
-simulateInfectionCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv"
-infectedByDistrictCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\infectedByDistrict.csv"
-nInfectedCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\infections.csv"
+simulateInfectionCSV = "data/simulateInfection.csv"
+infectedByDistrictCSV = "data/infectedByDistrict.csv"
+nInfectedCSV = "data/infections.csv"
 
 with open(simulateInfectionCSV, 'r') as csvFile, open(infectedByDistrictCSV, 'r') as csvFile2, open(nInfectedCSV, 'r') as csvFile3:
     reader = csv.reader(csvFile)
