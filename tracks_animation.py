@@ -37,10 +37,16 @@ yb = zoom(ys_min,portoyBai,portoDuration)
 yc = zoom(ys_max,portoyCim,portoDuration)
 
 
+nI = []
+
 # i=frame
 def animate(i):
     global reader
+    global reader2
+    global reader3
 
+    axInfectedDistrict.clear()
+    axInfections.clear()
     axPortugal.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
 
     offsets = []
@@ -53,15 +59,47 @@ def animate(i):
         y = float(y)
         offsets.append([x,y])
         colors.append(color)
+    
+    infectedD = []
+    axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
+    axInfectedDistrict.set_yticks(y_pos)
+    axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
+    axInfectedDistrict.invert_yaxis()
+    axInfectedDistrict.set_xlabel("Nº infetados")
+
+    line = next(reader2)
+    for column in line:
+        x=int(column)
+        infectedD.append(x)
+
+    axInfectedDistrict.barh(y_pos, infectedD, align='center')
+    for i , v in enumerate(infectedD):
+        axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
+    
+    row = next(reader3)
+    for column in row:
+        x=int(column)
+        nI.append(x)
 
 
-    scat.set_offsets(offsets)
-    scat.set_color(colors)
+    axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
+    axInfections.set_ylabel('Infetados')
+    axInfections.set_title("Curva de infeção", fontsize = 'medium') 
+    axInfections.plot(nI)
+
+    scatPortugal.set_offsets(offsets)
+    scatPortugal.set_color(colors)
+   
+    scatPorto.set_offsets(offsets)
+    scatPorto.set_color(colors)
+    
+    scatLisboa.set_offsets(offsets)
+    scatLisboa.set_color(colors)
 
     
 
 scale=1/3000000
-conn = psycopg2.connect("dbname=postgres user=postgres")
+conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
 register(conn)
 
 
@@ -81,35 +119,6 @@ axLisboa = fig.add_subplot(2,3,5)
 axLisboa.axis('off')
 #axLisboa.set(xlim=(-118900,-56100), ylim=(-109900,-38300))
 axLisboa.set_title("\n".join(wrap("Concelhos: LISBOA, OEIRAS, CASCAIS, SINTRA, AMADORA, ODIVELAS, LOURES, ALMADA, SEIXAL, MOITA")), fontsize = 'small', y=-0.10)
-
-# numero de infeçoes/tempo (curva)
-axInfections = fig.add_subplot(2,3,3)
-axInfections.axis('on')
-axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
-axInfections.set_ylabel('Infetados')
-axInfections.set_title("Curva de infeção", fontsize = 'medium')
-
-# numero de infetados por distrito (barras)
-axInfectedDistrict = fig.add_subplot(2,3,6)
-axInfectedDistrict.axis('on')
-labels = ["AVEIRO", "BEJA" ,"BRAGA", "BRAGANÇA", "CASTELO BRANCO", "COIMBRA", "ÉVORA", "FARO", "GUARDA", "LEIRIA", "LISBOA" , "PORTALEGRE" , "PORTO" , "SANTARÉM", "SETÚBAL" , "V.CASTELO" ,"VILA REAL" , "VISEU" ]
-values = [1,2,3,4,5,6,7,8,9, 10, 11, 12, 13 ,14 ,15, 16, 17, 18]
-
-y_pos = np.arange(len(labels))
-
-axInfectedDistrict.barh(y_pos, values, align='center')
-axInfectedDistrict.set_yticks(y_pos)
-axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
-axInfectedDistrict.invert_yaxis()
-axInfectedDistrict.set_xlabel("Nº infetados")
-axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
-axInfectedDistrict.set(xlim=(0, 20))
-
-for i , v in enumerate(values):
-    axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
-
-
-
 
 cursor_psql = conn.cursor()
 
@@ -152,7 +161,42 @@ with open('maps/lisboa.csv', 'r') as csvFile:
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 
-with open('data/simulateInfection.csv', 'r') as csvFile:
+#----------------------------------PLOT DE Grafico de Barras----------------------------------------------------------------------------------------------
+
+
+# numero de infetados por distrito (barras)
+axInfectedDistrict = fig.add_subplot(2,3,6)
+axInfectedDistrict.axis('on')
+labels = ["AVEIRO", "BEJA" ,"BRAGA", "BRAGANÇA", "CASTELO BRANCO", "COIMBRA", "ÉVORA", "FARO", "GUARDA", "LEIRIA", "LISBOA" , "PORTALEGRE" , "PORTO" , "SANTARÉM", "SETÚBAL" , "V.CASTELO" ,"VILA REAL" , "VISEU" ]
+values = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+y_pos = np.arange(len(labels))
+
+axInfectedDistrict.barh(y_pos, values, align='center')
+axInfectedDistrict.set_yticks(y_pos)
+axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
+axInfectedDistrict.invert_yaxis()
+axInfectedDistrict.set_xlabel("Nº infetados")
+axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
+
+for i , v in enumerate(values):
+    axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
+
+#-----------------------------------PLOT DA CURVA----------------------------------------------------------------------------------------------
+
+axInfections = fig.add_subplot(2,3,3)
+axInfections.axis('on')
+axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
+axInfections.set_ylabel('Infetados')
+axInfections.set_title("Curva de infeção", fontsize = 'medium')
+
+#-----------------------------ABERTURA DE FICHEIROS E CHAMADA DE ANIMAÇÃO----------------------------------------------------------------------------------------------
+
+simulateInfectionCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\simulateInfection.csv"
+infectedByDistrictCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\infectedByDistrict.csv"
+nInfectedCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\infections.csv"
+
+with open(simulateInfectionCSV, 'r') as csvFile, open(infectedByDistrictCSV, 'r') as csvFile2, open(nInfectedCSV, 'r') as csvFile3:
     reader = csv.reader(csvFile)
 
     line = next(reader)
@@ -163,12 +207,15 @@ with open('data/simulateInfection.csv', 'r') as csvFile:
             x.append(i[0])
             y.append(i[1])
 
-    scat = axPortugal.scatter(x,y,s=2,color='orange')
-    #100 fps
+    scatPortugal = axPortugal.scatter(x,y,s=2,color='orange')
+    scatPorto = axPorto.scatter(x,y,s=2,color='orange')
+    scatLisboa = axLisboa.scatter(x,y,s=2,color='orange')
 
+    reader2 = csv.reader(csvFile2)
 
-    anim = FuncAnimation(fig, animate, interval=5, frames=8640-1, repeat = False)
-
+    reader3 = csv.reader(csvFile3)
+    
+    anim = FuncAnimation(fig, animate, interval=1, frames=8640-1, repeat = False)
 
     plt.draw()
     plt.show()
