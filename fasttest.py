@@ -56,28 +56,36 @@ import shutil
 #     simulateInfectionf.write("\n")
 #     simulateInfectionf.close()
 
-line1 = [1,2,3,4,5,6]
-line2 = [6,5,4,3,2,1]
+# line1 = [1,2,3,4,5,6]
+# line2 = [6,5,4,3,2,1]
 
-for i, j in zip(line1,line2):
-    print("i:" + str(i) + " j:" + str(j))
+# for i, j in zip(line1,line2):
+#     print("i:" + str(i) + " j:" + str(j))
 
 
 
-folder = os.getcwd()+"/data/"
+# folder = os.getcwd()+"/data/"
 
-try:
-    os.mkdir(folder)
-except OSError:
-    try:
-        shutil.rmtree(folder)
-    except OSError:
-        print("ERROR CREATING FOLDER")
-    try:
-        os.mkdir(folder)
-    except OSError:
-        print("ERROR CREATING FOLDER")
+# try:
+#     os.mkdir(folder)
+# except OSError:
+#     try:
+#         shutil.rmtree(folder)
+#     except OSError:
+#         print("ERROR CREATING FOLDER")
+#     try:
+#         os.mkdir(folder)
+#     except OSError:
+#         print("ERROR CREATING FOLDER")
 
-with open(folder + 'simulateInfection.csv', 'w', newline='') as file:
-    filewriter = csv.writer(file)
-    filewriter.writerow(["tudo"])
+# with open(folder + 'simulateInfection.csv', 'w', newline='') as file:
+#     filewriter = csv.writer(file)
+#     filewriter.writerow(["tudo"])
+
+arr = [1,2,3,4]
+
+i = 0
+while i < len(arr):
+    print("i: " + str(i))
+    i+=1
+

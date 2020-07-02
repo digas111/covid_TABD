@@ -116,88 +116,43 @@ cursor_psql = conn.cursor()
 
 #-------------------------------------PLOT DE PORTUGAL----------------------------------------------------------------------
 
-sql = "select distrito,st_union(proj_boundary) from cont_aad_caop2018 group by distrito"
-
-cursor_psql.execute(sql)
-results = cursor_psql.fetchall()
-xs , ys = [],[]
-for row in results:
-    geom = row[1]
-    if type(geom) is MultiPolygon:
-        for pol in geom:
-            xys = pol[0].coords
-            xs, ys = [],[]
-            for (x,y) in xys:
-                xs.append(x)
-                ys.append(y)
-            axPortugal.plot(xs,ys,color='black',lw='0.2')
-    if type(geom) is Polygon:
-        xys = geom[0].coords
-        xs, ys = [],[]
-        for (x,y) in xys:
-            xs.append(x)
-            ys.append(y)
+with open('maps/portugal.csv', 'r') as csvFile:
+    reader = csv.reader(csvFile)
+    for row in reader:
+        xs , ys = [],[]
+        for column in row:
+            x,y = column.split()
+            xs.append(float(x))
+            ys.append(float(y))
         axPortugal.plot(xs,ys,color='black',lw='0.2')
-
 
 #------------------------------PLOT DO PORTO--------------------------------------------------------------------------------------------
 
-
-sql = "select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'PORTO' or concelho = 'VILA NOVA DE GAIA' or concelho = 'MATOSINHOS' or concelho = 'MAIA' group by distrito"
-
-# select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'PORTO' or concelho = 'VILA NOVA DE GAIA' or concelho = 'MATOSINHOS' or concelho = 'MAIA group by distrito'
-
-cursor_psql.execute(sql)
-results = cursor_psql.fetchall()
-xs , ys = [],[]
-for row in results:
-    geom = row[1]
-    if type(geom) is MultiPolygon:
-        for pol in geom:
-            xys = pol[0].coords
-            xs, ys = [],[]
-            for (x,y) in xys:
-                xs.append(x)
-                ys.append(y)
-            axPorto.plot(xs,ys,color='black',lw='0.2')
-    if type(geom) is Polygon:
-        xys = geom[0].coords
-        xs, ys = [],[]
-        for (x,y) in xys:
-            xs.append(x)
-            ys.append(y)
+with open('maps/porto.csv', 'r') as csvFile:
+    reader = csv.reader(csvFile)
+    for row in reader:
+        xs , ys = [],[]
+        for column in row:
+            x,y = column.split()
+            xs.append(float(x))
+            ys.append(float(y))
         axPorto.plot(xs,ys,color='black',lw='0.2')
-
 
 #----------------------------------PLOT DE LISBOA----------------------------------------------------------------------------------------------
 
-sql = "select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'LISBOA' or concelho = 'OEIRAS' or concelho = 'CASCAIS' or concelho = 'SINTRA' or concelho = 'AMADORA' or concelho = 'ODIVELAS' or concelho = 'LOURES' or concelho = 'ALMADA' or concelho = 'SEIXAL' or concelho = 'MOITA' and (distrito = 'LISBOA' or distrito = 'SET┌BAL') group by distrito"
-
-# select distrito, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'LISBOA' or concelho = 'OEIRAS' or concelho = 'CASCAIS' or concelho = 'SINTRA' or concelho = 'AMADORA' or concelho = 'ODIVELAS' or concelho = 'LOURES' or concelho = 'ALMADA' or concelho = 'SEIXAL' or concelho = 'MOITA' and (distrito = 'LISBOA' or distrito = 'SET┌BAL') group by distrito
-
-cursor_psql.execute(sql)
-results = cursor_psql.fetchall()
-xs , ys = [],[]
-for row in results:
-    geom = row[1]
-    if type(geom) is MultiPolygon:
-        for pol in geom:
-            xys = pol[0].coords
-            xs, ys = [],[]
-            for (x,y) in xys:
-                xs.append(x)
-                ys.append(y)
-            axLisboa.plot(xs,ys,color='black',lw='0.2')
-    if type(geom) is Polygon:
-        xys = geom[0].coords
-        xs, ys = [],[]
-        for (x,y) in xys:
-            xs.append(x)
-            ys.append(y)
+with open('maps/lisboa.csv', 'r') as csvFile:
+    reader = csv.reader(csvFile)
+    for row in reader:
+        xs , ys = [],[]
+        for column in row:
+            x,y = column.split()
+            xs.append(float(x))
+            ys.append(float(y))
         axLisboa.plot(xs,ys,color='black',lw='0.2')
 
+#----------------------------------------------------------------------------------------------------------------------------------------------
 
-with open('simulateInfection.csv', 'r') as csvFile:
+with open('data/simulateInfection.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
 
     line = next(reader)
@@ -212,7 +167,7 @@ with open('simulateInfection.csv', 'r') as csvFile:
     #100 fps
 
 
-    anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
+    anim = FuncAnimation(fig, animate, interval=5, frames=8640-1, repeat = False)
 
 
     plt.draw()

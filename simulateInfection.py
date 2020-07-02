@@ -12,10 +12,8 @@ import os
 import shutil
 import time
 import datetime
-import multiprocessing
 
 start_time = time.time()
-
 
 conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
@@ -138,38 +136,38 @@ for i in range(1,len(offsets)):
                     infectTaxi(i,j)
 
 # Percorrer primeiro por coluna e depois por linha para tornar o ficheiro mais eficiente
+#### Infetados por distrito ####
 
-for i in range(0,len(offsets)):
-    for j in range(0,len(offsets[i])):
-        if (offsets[i][j] != [0,0]):
-            if (infectionPercentages[i][j] == 100):
-                idDistrict = None
-                sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
-                cursor_psql.execute(sql)
-                results = cursor_psql.fetchall()
-                if (results != []):
-                    idDistrict = int(districts.get(results[0][0]))
-                else:
-                    print("PONTO FORA DO MAPA: " + str(offsets[i][j][0]) + " " + str(offsets[i][j][1]))
-                if (idDistrict != None):
-                    infectedByDistrict[i][idDistrict] +=1
-                    k = i+1
-                    while (k<len(offsets) and offsets[k][j] == [0,0]):
-                        infectedByDistrict[k][idDistrict] += 1
-                        k+=1
+for j in range(0,len(offsets[0])):
 
-                    k = i+1
-                    while (k<len(offsets)):
-                        sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[k][j][0]) + ", " + str(offsets[k][j][1]) +"), 3763))"
-                        cursor_psql.execute(sql)
-                        results = cursor_psql.fetchall()
-                        if (results == []):
-                            print("PONTO FORA DO MAPA TRATADO")
-                            infectedByDistrict[k][idDistrict] += 1
-                        else:
-                            break
-                        k+=1
+    i=0
+    results = None
+
+    sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
+    cursor_psql.execute(sql)
+    results = cursor_psql.fetchall()
+
+    while (i<len(offsets) and (offsets[i][j] == [0,0] or results == [])):
+        i+=1
+        sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
+        cursor_psql.execute(sql)
+        results = cursor_psql.fetchall()
+
+    while(i<len(offsets)):
+
+        if (results != [] and offsets[i][j] != [0,0]):
+            idDistrict = int(districts.get(results[0][0]))
+
+        infectedByDistrict[i][idDistrict] += 1
+
+        i+=1
+        if (i<len(offsets)):
+            sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
+            cursor_psql.execute(sql)
+            results = cursor_psql.fetchall()
+        
                     
+conn.close()
 
 ##### WRITE TO FILES #####
 
@@ -187,6 +185,8 @@ except OSError:
     except OSError:
         print("ERROR CREATING FOLDER")
 
+# def writeSimulateInfection():
+
 #### Create File with offsets and infections #### -> new thread
 
 with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
@@ -198,12 +198,24 @@ with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
                 row.append(str(cf[0]) + " " + str(cf[1]) + " " + cc)
         sifw.writerow(row)
 
-#### Create file with number of infected #### -> new thread
+# def writeNInfected():
 
-with open(folder + 'nInfected.csv', 'w', newline='') as nif:
+#### Create file with number of infected an file with R #### -> new thread
+
+with open(folder + 'nInfected.csv', 'w', newline='') as nif, open(folder + 'rvalues.csv', 'w', newline='') as rv:
+
     nifw = csv.writer(nif)
-    for infected in nInfected:
-        nifw.writerow(infected)
+    rvw = csv.writer(rv)
+
+    nifw.writerow([nInfected[0]])
+    rvw.writerow([0])
+
+    for i in range(1,len(nInfected)):
+        nifw.writerow([nInfected[i]])
+        rvw.writerow([(nInfected[i]-nInfected[i-1]) / nInfected[i-1]])
+
+
+# def writeInfectionsByDistrict():
 
 #### Create file with new infections by dristrict #### -> new thread
 
@@ -212,15 +224,14 @@ with open(folder + 'infectionsByDistrict.csv', 'w', newline='') as isbdf:
     for row in infectedByDistrict:
         isbdfw.writerow(row)
 
+# def writeInfectedByDistrict():
+
 #### Create file with infected by district #### -> new thread
 
 with open(folder + 'infectedByDistrict.csv', 'w', newline='') as idbdf:
     idbdfw = csv.writer(idbdf)
     for row in infectedByDistrict:
         idbdfw.writerow(row)
-
-
-conn.close()
 
 print("Ficheiros criados em: " + str(datetime.timedelta(seconds=(time.time() - start_time))))
 
