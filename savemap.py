@@ -62,7 +62,7 @@ with open(folder + 'portugal.csv', 'w', newline='') as portugal:
 
 ### PORTO
 
-sql = "select freguesia, st_union(proj_boundary), concelho from cont_aad_caop2018 where concelho = 'PORTO' or concelho = 'VILA NOVA DE GAIA' or concelho = 'MATOSINHOS' or concelho = 'MAIA' group by concelho,freguesia"
+sql = "select concelho, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'PORTO' or concelho = 'VILA NOVA DE GAIA' or concelho = 'MATOSINHOS' or concelho = 'MAIA' or concelho = 'VALONGO' or concelho = 'GONDOMAR' group by concelho"
 
 cursor_psql.execute(sql)
 results = cursor_psql.fetchall()
@@ -88,7 +88,7 @@ with open(folder + 'porto.csv', 'w', newline='') as porto:
 
 ### LISBOA
 
-sql = "select freguesia, st_union(proj_boundary), concelho from cont_aad_caop2018 where concelho = 'PORTO' or concelho = 'VILA NOVA DE GAIA' or concelho = 'MATOSINHOS' or concelho = 'MAIA' group by concelho,freguesia"
+sql = "select concelho, st_union(proj_boundary) from cont_aad_caop2018 where concelho = 'LISBOA' or concelho = 'OEIRAS' or concelho = 'CASCAIS' or concelho = 'SINTRA' or concelho = 'AMADORA' or concelho = 'ODIVELAS' or concelho = 'LOURES' or concelho = 'ALMADA' or concelho = 'SEIXAL' or concelho = 'MOITA' and (distrito = 'LISBOA' or distrito = 'SET┌BAL') group by concelho"
 
 cursor_psql.execute(sql)
 results = cursor_psql.fetchall()
