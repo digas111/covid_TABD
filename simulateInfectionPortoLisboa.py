@@ -60,10 +60,10 @@ districts = {
     "VISEU" : "17"
 }
 
-taxisPorto = {161, 238, 110, 978, 306, 723, 247, 664, 187, 958}
-taxisLisboa= {1602, 836, 1285, 872, 1163, 815, 1180, 817, 1500, 1564}
-firstTaxiPorto = random.sample(taxisPorto,1)[0]
-firstTaxiLisboa = random.sample(taxisLisboa,1)[0]
+taxisPorto = [161, 238, 110, 978, 306, 723, 247, 664, 187, 958]
+taxisLisboa= [1602, 836, 1285, 872, 1163, 815, 1180, 817, 1500, 1564]
+firstTaxiPorto = random.choice(taxisPorto)
+firstTaxiLisboa = random.choice(taxisLisboa)
 
 ##########
 

@@ -215,7 +215,7 @@ with open(simulateInfectionCSV, 'r') as csvFile, open(infectedByDistrictCSV, 'r'
 
     reader3 = csv.reader(csvFile3)
     
-    anim = FuncAnimation(fig, animate, interval=1, frames=8640-1, repeat = False)
+    anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
 
     plt.draw()
     plt.show()
