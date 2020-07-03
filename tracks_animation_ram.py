@@ -18,64 +18,53 @@ height_in_inches = (ys_max-ys_min)/0.0254*1.1
 nI = []
 
 # i=frame
-def animate(i):
-    global reader
-    global reader2
-    global reader3
+def animate(i, x, y, line):
 
-    axInfectedDistrict.clear()
-    axInfections.clear()
+    global offsets
+    global colors
+    global nInfectedByDistrict
+
+    # axInfectedDistrict.clear()
+
     axPortugal.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
-
-    offsets = []
-    colors = []
-
-    line = next(reader)
-    for row in line:
-        x,y,color = row.split()
-        x = float(x)
-        y = float(y)
-        offsets.append([x,y])
-        colors.append(color)
     
-    infectedD = []
     axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
     axInfectedDistrict.set_yticks(y_pos)
     axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
     axInfectedDistrict.invert_yaxis()
     axInfectedDistrict.set_xlabel("Nº infetados")
 
-    line = next(reader2)
-    for column in line:
-        x=int(column)
-        infectedD.append(x)
 
-    axInfectedDistrict.barh(y_pos, infectedD, align='center')
-    for i , v in enumerate(infectedD):
+
+    axInfectedDistrict.barh(y_pos, nInfectedByDistrict[i], align='center')
+    for i , v in enumerate(nInfectedByDistrict[i]):
         axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
+
+    line.set_data(x[:i],y[:i])
+    line.axes.axis([0, x[i]+1, 0, y[i]+1])
     
-    row = next(reader3)
-    for column in row:
-        x=int(column)
-        nI.append(x)
 
+    # axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
+    # axInfections.set_ylabel('Infetados')
+    # axInfections.set_title("Curva de infeção", fontsize = 'medium')
 
-    axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
-    axInfections.set_ylabel('Infetados')
-    axInfections.set_title("Curva de infeção", fontsize = 'medium') 
-    axInfections.plot(nI)
+    # # nI = []
+    # # for j in range(0,i):
+    # #     nI.append(nInfected[j])
+
+    # axInfections.plot(nInfected)
 
     # axInfections.set_xdata(i)
     # axInfections.set_ydata(nI)
 
-    scatPortugal.set_offsets(offsets)
-    scatPortugal.set_color(colors)
+    scatPortugal.set_offsets(offsets[i])
+    scatPortugal.set_color(colors[i])
    
-    scatPorto.set_offsets(offsets)
-    scatPorto.set_color(colors)
+    scatPorto.set_offsets(offsets[i])
+    scatPorto.set_color(colors[i])
     
-    scatLisboa.set_offsets(offsets)
-    scatLisboa.set_color(colors)
+    scatLisboa.set_offsets(offsets[i])
+    scatLisboa.set_color(colors[i])
 
     
 
@@ -161,7 +150,6 @@ for i , v in enumerate(values):
 #-----------------------------------PLOT DA CURVA----------------------------------------------------------------------------------------------
 
 axInfections = fig.add_subplot(2,3,3)
-# line, = ax.plot([0,1],[0,0])
 axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
 axInfections.set_ylabel('Infetados')
 axInfections.set_title("Curva de infeção", fontsize = 'medium')
@@ -172,26 +160,58 @@ simulateInfectionCSV = "data/simulateInfection.csv"
 infectedByDistrictCSV = "data/infectedByDistrict.csv"
 nInfectedCSV = "data/infections.csv"
 
+
+offsets = []
+colors = []
+nInfected = []
+nInfectedByDistrict = []
+
+
 with open(simulateInfectionCSV, 'r') as csvFile, open(infectedByDistrictCSV, 'r') as csvFile2, open(nInfectedCSV, 'r') as csvFile3:
     
     reader = csv.reader(csvFile)
     reader2 = csv.reader(csvFile2)
     reader3 = csv.reader(csvFile3)
 
-    line = next(reader)
+    for row in reader:
+        offsetsaux = []
+        coloraux = []
+        for column in row:
+            x,y,color = column.split()
+            x = float(x)
+            y = float(y)
+            offsetsaux.append([x,y])
+            coloraux.append(color)
 
-    x,y = [],[]
-    for i in line:
-        x.append(i[0])
-        y.append(i[1])
+        offsets.append(offsetsaux)
+        colors.append(coloraux)
 
-    scatPortugal = axPortugal.scatter(x,y,s=2,color='orange')
-    scatPorto = axPorto.scatter(x,y,s=2,color='orange')
-    scatLisboa = axLisboa.scatter(x,y,s=2,color='orange')
+    for row in reader2:
+        nInfectedByDistrictaux = []
+        for column in row:
+            nInfectedByDistrictaux.append(int(column))
+
+        nInfectedByDistrict.append(nInfectedByDistrictaux)
+    
+    for row in reader3:
+        nInfected.append(int(row[0]))       
+
+x,y = [],[]
+for i in offsets[0]:
+    x.append(i[0])
+    y.append(i[1])
 
     
-    
-    anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, repeat = False)
 
-    plt.draw()
-    plt.show()
+scatPortugal = axPortugal.scatter(x,y,s=2,color='orange')
+scatPorto = axPorto.scatter(x,y,s=2,color='orange')
+scatLisboa = axLisboa.scatter(x,y,s=2,color='orange')
+
+animationIndexs = [n for n in range(0,len(nInfected))]
+
+line, = axInfections.plot(animationIndexs,nInfected)
+
+anim = FuncAnimation(fig, animate, interval=100, frames=8640-1, fargs=[animationIndexs, nInfected, line], repeat = False)
+
+plt.draw()
+plt.show()
