@@ -17,45 +17,32 @@ height_in_inches = (ys_max-ys_min)/0.0254*1.1
 
 nI = []
 
+
 # i=frame
 def animate(i, x, y, line):
 
     global offsets
     global colors
     global nInfectedByDistrict
-
-    # axInfectedDistrict.clear()
+    global maxVDistrict
 
     axPortugal.set_title(datetime.datetime.utcfromtimestamp(ts_i+i*10))
-    
-    axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
-    axInfectedDistrict.set_yticks(y_pos)
-    axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
-    axInfectedDistrict.invert_yaxis()
-    axInfectedDistrict.set_xlabel("Nº infetados")
 
+    for j , b in enumerate(barplot):
+        if (nInfectedByDistrict[i][j] > 0 and nInfectedByDistrict[i][j] != nInfectedByDistrict[i-1][j]):
+            if nInfectedByDistrict[i][j] > maxVDistrict:
+                maxVDistrict = nInfectedByDistrict[i][j]
+                axInfectedDistrict.set_xlim([0,maxVDistrict+1])
+            for txt in axInfectedDistrict.texts:
+                if txt.get_position()[0] == nInfectedByDistrict[i-1][j] and txt.get_position()[1] == j:
+                    txt.remove()
+            b.set_width(nInfectedByDistrict[i][j])
+            axInfectedDistrict.text(nInfectedByDistrict[i][j], j , " " + str(nInfectedByDistrict[i][j]), va = "center", fontweight = 'bold')
 
-
-    axInfectedDistrict.barh(y_pos, nInfectedByDistrict[i], align='center')
-    for i , v in enumerate(nInfectedByDistrict[i]):
-        axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
 
     line.set_data(x[:i],y[:i])
     line.axes.axis([0, x[i]+1, 0, y[i]+1])
     
-
-    # axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
-    # axInfections.set_ylabel('Infetados')
-    # axInfections.set_title("Curva de infeção", fontsize = 'medium')
-
-    # # nI = []
-    # # for j in range(0,i):
-    # #     nI.append(nInfected[j])
-
-    # axInfections.plot(nInfected)
-
-    # axInfections.set_xdata(i)
-    # axInfections.set_ydata(nI)
 
     scatPortugal.set_offsets(offsets[i])
     scatPortugal.set_color(colors[i])
@@ -73,7 +60,7 @@ conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 
 
-fig = plt.figure(figsize=(width_in_inches*scale*4, height_in_inches*scale*1.05), )
+fig = plt.figure(figsize=(width_in_inches*scale*4, height_in_inches*scale), )
 
 axPortugal = fig.add_subplot(1,3,1)
 axPortugal.axis('off')
@@ -131,34 +118,34 @@ with open('maps/lisboa.csv', 'r') as csvFile:
 
 # numero de infetados por distrito (barras)
 axInfectedDistrict = fig.add_subplot(2,3,6)
-axInfectedDistrict.axis('on')
+# axInfectedDistrict.axis('on')
 labels = ["AVEIRO", "BEJA" ,"BRAGA", "BRAGANÇA", "CASTELO BRANCO", "COIMBRA", "ÉVORA", "FARO", "GUARDA", "LEIRIA", "LISBOA" , "PORTALEGRE" , "PORTO" , "SANTARÉM", "SETÚBAL" , "V.CASTELO" ,"VILA REAL" , "VISEU" ]
-values = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+values = [0]*len(labels)
 
 y_pos = np.arange(len(labels))
 
-axInfectedDistrict.barh(y_pos, values, align='center')
+barplot = axInfectedDistrict.barh(y_pos,values, align='center')
 axInfectedDistrict.set_yticks(y_pos)
 axInfectedDistrict.set_yticklabels(labels, fontsize = 'x-small')
 axInfectedDistrict.invert_yaxis()
 axInfectedDistrict.set_xlabel("Nº infetados")
 axInfectedDistrict.set_title("Infetados/Distrito", fontsize = 'small')
 
-for i , v in enumerate(values):
-    axInfectedDistrict.text(v, i , " " + str(v), va = "center", fontweight = 'bold')
+maxVDistrict = 0
 
 #-----------------------------------PLOT DA CURVA----------------------------------------------------------------------------------------------
 
-axInfections = fig.add_subplot(2,3,3)
+axInfections = fig.add_subplot(4,3,3)
 axInfections.set_xlabel('Tempo em seg', fontsize = 'small', ma = "left")
 axInfections.set_ylabel('Infetados')
 axInfections.set_title("Curva de infeção", fontsize = 'medium')
 
 #-----------------------------ABERTURA DE FICHEIROS E CHAMADA DE ANIMAÇÃO----------------------------------------------------------------------------------------------
 
-simulateInfectionCSV = "data/simulateInfection.csv"
-infectedByDistrictCSV = "data/infectedByDistrict.csv"
-nInfectedCSV = "data/infections.csv"
+simulateInfectionCSV = "data/porto&lisboa/simulateInfection.csv"
+infectedByDistrictCSV = "data/porto&lisboa/infectedByDistrict.csv"
+nInfectedCSV = "data/porto&lisboa/infections.csv"
+
 
 
 offsets = []
@@ -211,7 +198,7 @@ animationIndexs = [n for n in range(0,len(nInfected))]
 
 line, = axInfections.plot(animationIndexs,nInfected)
 
-anim = FuncAnimation(fig, animate, interval=100, frames=8640-1, fargs=[animationIndexs, nInfected, line], repeat = False)
+anim = FuncAnimation(fig, animate, interval=10, frames=8640-1, fargs=[animationIndexs, nInfected, line], repeat = False)
 
 plt.draw()
 plt.show()
