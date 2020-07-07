@@ -15,35 +15,61 @@ import datetime
 import curses
 from progress.bar import IncrementalBar
 from progress.spinner import Spinner
+import menus
 
-#Save inicial time to print
-start_time = 0
 
-subfolder = ""
+# Directory where files will be saved
+subfolder = "/data/"
 
 ##########
 
 infectingDistance = 80
 infectingRate = 20 #percentage by frame
-ninfectedBeforeMask = 0
 
-##########
+# Infected before preventive measures are taken
+# If negative no measures will be taken
+infectedBeforeMeasures = -1
 
+# Applys preventive measures
+def measures():
+
+    global infectingDistance
+    global infectingRate
+
+    infectingDistance = infectingDistance/2
+    infectingRate = infectingRate/2
+
+# Connect to Database
 conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
 cursor_psql = conn.cursor()
 
+# Index of taxis that are infected from the start
 startingInfected = []
+
+# Offsetds of the taxis
 offsets = []
+
+# Saves index of infected taxis
 infectedID = []
+
+# Saves percentage of infections of each taxi in each frame
 infectionPercentages = []
+
+# Color of each taxi in each frame (corresponde to infection rate)
 colors = []
+
+#Nº infected for each frame
 nInfected = []
+
+#Nº infected taxis for district for each frame
+# If car moves to another district the counter is updated
 infectedByDistrict = []
+
+# Nº taxis that got infected in each district for each frame
 infectionsByDistrict = []
 
-
-
+# Associates each district to the column that representes it in infectedByDistrict and infectionsByDistrict
 districts = {
     "AVEIRO" : "0",
     "BEJA" : "1",
@@ -65,11 +91,15 @@ districts = {
     "VISEU" : "17"
 }
 
+# First 10 taxis to appear in Porto
 taxisPorto = [161, 238, 110, 978, 306, 723, 247, 664, 187, 958]
+
+# First 10 taxis to appear in Lisboa
 taxisLisboa= [1602, 836, 1285, 872, 1163, 815, 1180, 817, 1500, 1564]
 
 #### FUNCTIONS ####
 
+# Infect a taxi from a specified frame until the last frame
 def infectTaxi(frame,row):
 
     global infectionPercentages
@@ -78,355 +108,235 @@ def infectTaxi(frame,row):
     global infectionsByDistrict
     global cursor_psql
 
+    # Nº of total infected taxis
     numberInfect = nInfected[frame]+1
 
+    # Takes preventive measures if start number of infections is reached
+    # If no measures are to be taken infectedBeforeMeasures is negative so the condition is always false
+    if numberInfect == infectedBeforeMeasures:
+        measures()
+
+    # Add the index of the taxi to the list of infected taxis
     infectedID.append(row)
 
+    # Saves the index of the district
+    # Is None if car isn't in any district (error in the map)
     idDistrict = None
 
+    # Query to get the district where the car is at the moment of infection
     sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[frame][row][0]) + ", " + str(offsets[frame][row][1]) +"), 3763))"
     cursor_psql.execute(sql)
-    results = cursor_psql.fetchall()
+    results = cursor_psql.fetchall() # result saves the name of the district in result[0][0]
+
+    # If the car is in a district
     if (results != []):
-        idDistrict = int(districts.get(results[0][0]))
+        # Save index of the district
+        idDistrict = int(districts.get(results[0][0])) 
     else:
+        # Print message to console with the point the is out of the map
         print("PONTO FORA DO MAPA: " + str(offsets[frame][row][0]) + " " + str(offsets[frame][row][1]))
 
+    # For everyframe since the infection
     for i in range(frame,len(infectionPercentages)):
         if (idDistrict != None):
+            # Number of infections in district goes up by one
             infectionsByDistrict[i][idDistrict] += 1
+        # Total number of infected goes up by one
         nInfected[i] = numberInfect
+        # Probability of infection is 100%
         infectionPercentages[i][row]=100
+        # Infected cars in displayed in red
         colors[i][row]="#cd0000" #red
+
+# Gets geneation settings from user
+# Starting point can be: Porto and Lisboa, Porto or Lisboa
+# Measures can be taken or not
+# If they are to be taken user gives nº infectied before measures take place
+
+def getGenerationSettings(stdscr):
+
+    global subfolder
+    global infectedBeforeMeasures
+
+    starting = menus.getStartingOptions(stdscr)
+
+    if starting == 1: # Porto and Lisboa
+        startingInfected.append(random.choice(taxisPorto))
+        startingInfected.append(random.choice(taxisLisboa))
+        subfolder += "PortoLisboa/"
+    elif starting == 2: # Porto
+        startingInfected.append(random.choice(taxisPorto))
+        subfolder += "Porto/"
+    elif starting == 3: # Lisboa
+        startingInfected.append(random.choice(taxisLisboa))
+        subfolder += "Lisboa/"
+    else: # Cancel
+        exit(0)
+
+    infectedBeforeMeasures = menus.precautionaryMeasures(stdscr)
+
+    if infectedBeforeMeasures >= 0: # Taking measures
+        # Data is saved in a folder which name is the nº infected before measures are taken
+        subfolder += str(infectedBeforeMeasures) + "/"
+    if infectedBeforeMeasures == -2: # Cancel
+        exit(0)
 
 ###################
 
-### MENUS ###
+# Display the menus to choose the genartion options
+curses.wrapper(getGenerationSettings)
 
-title1 = "Primeiros infetados:"
-menu1Items = ['Porto & Lisboa','Porto','Lisboa','Exit']
+# Save inicial time to calculate run time
+start_time = time.time()
 
-def print_menu1(stdscr, selected_row_idx):
-    stdscr.clear()
-    h, w = stdscr.getmaxyx()
+# Opens file to count number of rows
+with open('offsets3.csv', 'r') as csvFile:
+    nrows = sum(1 for line in csv.reader(csvFile))
 
-    x = w//2 - len(title1)//2
-    y = h//3
+# Read Offsets and save them in memory
+with open('offsets3.csv', 'r') as csvFile:
+    reader = csv.reader(csvFile)
+    # Starts incremental bar
+    with IncrementalBar(menus.offstestext, max= nrows, suffix = menus.suffix) as bar:
+        for row in reader:
+            # All cars start as not infected
+            nInfected.append(0)
+            infectionsByDistrict.append([0]*len(districts))
+            infectedByDistrict.append([0]*len(districts))
+            l = []
+            inf = []
+            color = []
+            for column in row:
+                x,y = column.split()
+                x = float(x)
+                y = float(y)
+                l.append([x,y])
+                inf.append(int(0))
+                color.append("#008000") #green
+            offsets.append(l)
+            infectionPercentages.append(inf)
+            colors.append(color)
+            bar.next() # Advange the progress and update bar
+        
+# Infect the fisrt taxis
+for taxi in startingInfected:
+    infectTaxi(0,taxi)
 
-    stdscr.addstr(y, x, title1)
-
-    for idx, row in enumerate(menu1Items):
-        x = w//2 - len(row)//2
-        y = h//2 - len(menu1Items)//2 + idx
-        if idx == selected_row_idx:
-            stdscr.attron(curses.color_pair(1))
-            stdscr.addstr(y, x, row)
-            stdscr.attroff(curses.color_pair(1))
-        else:
-            stdscr.addstr(y, x, row)
-    
-    stdscr.refresh()
-
-def menu1(stdscr):
-
-    global subfolder
-
-    current_row_idx = 0
-
-    print_menu1(stdscr, current_row_idx)
-    
-    while 1:
-        key = stdscr.getch()
-        stdscr.clear()
-
-        if key == curses.KEY_UP and current_row_idx > 0:
-            current_row_idx -= 1
-        elif key == curses.KEY_DOWN and current_row_idx < len(menu1Items)-1:
-            current_row_idx += 1
-        elif key == curses.KEY_ENTER or key in [10,13]:
-            
-            if (current_row_idx == 0):
-                #Porto & Lisboa
-                startingInfected.append(random.choice(taxisPorto))
-                startingInfected.append(random.choice(taxisLisboa))
-                subfolder = "porto&lisboa/"
-                break
-            elif (current_row_idx == 1):
-                #Porto
-                startingInfected.append(random.choice(taxisPorto))
-                subfolder = "porto/"
-                break
-            elif (current_row_idx == 2):
-                #Lisboa
-                startingInfected.append(random.choice(taxisLisboa))
-                subfolder = "lisboa/"
-                break
-            elif (current_row_idx == len(menu1Items)-1):
-                exit(0)
-
-        print_menu1(stdscr, current_row_idx)
-        stdscr.refresh()
-
-
-
-title2 = "Medidas de precaoção:"
-menu2Items = ['Sim','Não','Exit']
-
-def print_menu2(stdscr, selected_row_idx):
-    stdscr.clear()
-    h, w = stdscr.getmaxyx()
-
-    x = w//2 - len(title2)//2
-    y = h//3
-
-    stdscr.addstr(y, x, title2)
-
-    for idx, row in enumerate(menu2Items):
-        x = w//2 - len(row)//2
-        y = h//2 - len(menu2Items)//2 + idx
-        if idx == selected_row_idx:
-            stdscr.attron(curses.color_pair(1))
-            stdscr.addstr(y, x, row)
-            stdscr.attroff(curses.color_pair(1))
-        else:
-            stdscr.addstr(y, x, row)
-    
-    stdscr.refresh()
-
-def menu2(stdscr):
-
-    global subfolder
-
-    current_row_idx = 0
-
-    print_menu2(stdscr, current_row_idx)
-
-    while 1:
-        key = stdscr.getch()
-        stdscr.clear()
-
-        if key == curses.KEY_UP and current_row_idx > 0:
-            current_row_idx -= 1
-        elif key == curses.KEY_DOWN and current_row_idx < len(menu2Items)-1:
-            current_row_idx += 1
-        elif key == curses.KEY_ENTER or key in [10,13]:
-
-            if (current_row_idx == 0):
-                #Sim
-                print_menu3(stdscr)
-                break
-            
-            elif (current_row_idx == 1):
-                #Não
-                break
-           
-            elif (current_row_idx == len(menu2Items)-1):
-                exit(0)
-
-        print_menu2(stdscr, current_row_idx)
-        stdscr.refresh()
-
-
-title3 = "Nº infected before taking measures:"
-
-def print_menu3(stdscr):
-    global ninfectedBeforeMask
-    stdscr.clear()
-    h, w = stdscr.getmaxyx()
-    x = w//2 - len(title3)//2
-    y = h//3
-
-    curses.echo() 
-    stdscr.addstr(y, x, title3)
-    stdscr.refresh()
-    x = w//2
-    ninfectedBeforeMask = int(stdscr.getstr(y + 2, x, 20))
-
-
-def mainMenu(stdscr):
-
-    global subfolder
-
-    curses.curs_set(0)
-    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
-
-    menu1(stdscr)
-    menu2(stdscr)
-
-    
-    # updateProgress(stdscr)
-
-def run_simulation():
-
-    global infectionPercentages
-    global infectedID
-    global nInfected
-    global infectionsByDistrict
-    global cursor_psql
-    global subfolder
-    global start_time
-
-    start_time = time.time()
-
-    with open('offsets3.csv', 'r') as csvFile:
-        nrows = sum(1 for line in csv.reader(csvFile))
-    
-    #### Ler Offsets ####
-    with open('offsets3.csv', 'r') as csvFile:
-        reader = csv.reader(csvFile)
-        with IncrementalBar("Reading offsets", max= nrows, suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
-            for row in reader:
-                nInfected.append(0)
-                infectionsByDistrict.append([0]*len(districts))
-                infectedByDistrict.append([0]*len(districts))
-                l = []
-                inf = []
-                color = []
-                for j in row:
-                    x,y = j.split()
-                    x = float(x)
-                    y = float(y)
-                    l.append([x,y])
-                    inf.append(int(0))
-                    color.append("#008000") #green
-                offsets.append(l)
-                infectionPercentages.append(inf)
-                colors.append(color)
-                bar.next()
-            
-    
-    for taxi in startingInfected:
-        infectTaxi(0,taxi)
-
-    #### Simular propagação do virus ####
-    with IncrementalBar("Simular propação do virus", max= len(offsets)-1, suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
-        for i in range(1,len(offsets)):
-            for j in range(0,len(offsets[0])):
-                if (offsets[i][j] != [0,0]):
-                    if (infectionPercentages[i][j] < 100):
-                        for ifid in infectedID:
-                            dist = int(math.dist(offsets[i][j],offsets[i][ifid]))
-                            if (dist < infectingDistance):
-                                infectionPercentages[i][j] = infectionPercentages[i-1][j] + infectingRate
-                                colors[i][j] = "black"
-                        if (infectionPercentages[i][j] >= 100):
-                            infectTaxi(i,j)
-            bar.next()
-
-    #### Infetados por distrito ####
-
-    with IncrementalBar("Infetados por distrito", max= len(offsets[0]), suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
+# Simulate virus propagation
+with IncrementalBar(menus.simulatevirustext, max= len(offsets)-1, suffix = menus.suffix) as bar:
+    for i in range(1,len(offsets)):
         for j in range(0,len(offsets[0])):
+            if (offsets[i][j] != [0,0]):
+                if (infectionPercentages[i][j] < 100):
+                    for ifid in infectedID:
+                        dist = int(math.dist(offsets[i][j],offsets[i][ifid]))
+                        if (dist < infectingDistance):
+                            infectionPercentages[i][j] = infectionPercentages[i-1][j] + infectingRate
+                            colors[i][j] = "black"
+                    if (infectionPercentages[i][j] >= 100):
+                        infectTaxi(i,j)
+        bar.next()
 
-            i=0
-            results = None
+# Save infected by distirct at a given frame
+with IncrementalBar(menus.infectedbydistricttext, max= len(offsets[0]), suffix = menus.suffix) as bar:
+    for j in range(0,len(offsets[0])):
 
-            while (i<len(offsets) and (offsets[i][j] == [0,0] or infectionPercentages[i][j] < 100)):
-                i+=1
+        i=0
+        results = None
 
+        while (i<len(offsets) and (offsets[i][j] == [0,0] or infectionPercentages[i][j] < 100)):
+            i+=1
+
+        if (i<len(offsets)):
+            sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
+            cursor_psql.execute(sql)
+            results = cursor_psql.fetchall()
+
+        while (i<len(offsets) and (offsets[i][j] == [0,0] or results == [])):
+            i+=1
+            sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
+            cursor_psql.execute(sql)
+            results = cursor_psql.fetchall()
+
+        while(i<len(offsets)):
+
+            if (results != [] and offsets[i][j] != [0,0]):
+                idDistrict = int(districts.get(results[0][0]))
+
+            infectedByDistrict[i][idDistrict] += 1
+
+            i+=1
             if (i<len(offsets)):
                 sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
                 cursor_psql.execute(sql)
                 results = cursor_psql.fetchall()
+        bar.next()
+        
+                    
+conn.close()
 
-            while (i<len(offsets) and (offsets[i][j] == [0,0] or results == [])):
-                i+=1
-                sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
-                cursor_psql.execute(sql)
-                results = cursor_psql.fetchall()
+# Write to files
 
-            while(i<len(offsets)):
+# Gets general directory to file
+folder = os.getcwd() + subfolder
 
-                if (results != [] and offsets[i][j] != [0,0]):
-                    idDistrict = int(districts.get(results[0][0]))
-
-                infectedByDistrict[i][idDistrict] += 1
-
-                i+=1
-                if (i<len(offsets)):
-                    sql = "select distrito from cont_aad_caop2018 where st_contains(proj_boundary, st_setsrid(st_point(" + str(offsets[i][j][0]) + ", " + str(offsets[i][j][1]) +"), 3763))"
-                    cursor_psql.execute(sql)
-                    results = cursor_psql.fetchall()
-            bar.next()
-            
-                        
-    conn.close()
-
-    ##### WRITE TO FILES #####
-
-    folder = os.getcwd()+"/data/" + subfolder
-
+try:
+    os.mkdir(folder)
+except OSError:
+    try:
+        shutil.rmtree(folder)
+    except OSError:
+        print("ERROR CREATING FOLDER")
     try:
         os.mkdir(folder)
     except OSError:
-        try:
-            shutil.rmtree(folder)
-        except OSError:
-            print("ERROR CREATING FOLDER")
-        try:
-            os.mkdir(folder)
-        except OSError:
-            print("ERROR CREATING FOLDER")
+        print("ERROR CREATING FOLDER")
 
-    # def writeSimulateInfection():
-
-    #### Create File with offsets and infections #### -> new thread
-    
-    with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
-        with IncrementalBar("Saving simulateInfection", max= len(offsets), suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
-            sifw = csv.writer(sif)
-            for rf, rc in zip(offsets,colors):
-                row = []
-                for cf, cc in zip(rf,rc):
-                    if (cf != [0,0]):
-                        row.append(str(cf[0]) + " " + str(cf[1]) + " " + cc)
-                sifw.writerow(row)
-                bar.next()
-
-    # def writeNInfected():
-
-    #### Create file with number of infected an file with R #### -> new thread
-
-    
-    with open(folder + 'infections.csv', 'w', newline='') as nif, open(folder + 'rvalues.csv', 'w', newline='') as rv:
-        with IncrementalBar("Saving nº Infections and R values", max= len(nInfected), suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
-
-            nifw = csv.writer(nif)
-            rvw = csv.writer(rv)
-
-            nifw.writerow([nInfected[0]])
-            rvw.writerow([0])
+# Create File with offsets and infections
+with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
+    with IncrementalBar(menus.savesimulateinfectiontext, max= len(offsets), suffix = menus.suffix) as bar:
+        sifw = csv.writer(sif)
+        for rf, rc in zip(offsets,colors):
+            row = []
+            for cf, cc in zip(rf,rc):
+                if (cf != [0,0]):
+                    row.append(str(cf[0]) + " " + str(cf[1]) + " " + cc)
+            sifw.writerow(row)
             bar.next()
 
-            for i in range(1,len(nInfected)):
-                nifw.writerow([nInfected[i]])
-                rvw.writerow([(nInfected[i]-nInfected[i-1]) / nInfected[i-1]])
-                bar.next()
+# Create file with number of infected an file with R
+with open(folder + 'infections.csv', 'w', newline='') as nif, open(folder + 'rvalues.csv', 'w', newline='') as rv:
+    with IncrementalBar(menus.saveNInfectedandRtext, max= len(nInfected), suffix = menus.suffix) as bar:
+
+        nifw = csv.writer(nif)
+        rvw = csv.writer(rv)
+
+        nifw.writerow([nInfected[0]])
+        rvw.writerow([0])
+        bar.next()
+
+        for i in range(1,len(nInfected)):
+            nifw.writerow([nInfected[i]])
+            rvw.writerow([(nInfected[i]-nInfected[i-1]) / nInfected[i-1]])
+            bar.next()
 
 
-    # def writeInfectionsByDistrict():
+# Create file with new infections by dristrict 
+with open(folder + 'infectionsByDistrict.csv', 'w', newline='') as isbdf:
+    with IncrementalBar(menus.saveInfectedByDistricttext, max= len(infectedByDistrict), suffix = menus.suffix) as bar:
+        isbdfw = csv.writer(isbdf)
+        for row in infectedByDistrict:
+            isbdfw.writerow(row)
+            bar.next()
 
-    #### Create file with new infections by dristrict #### -> new thread
+# Create file with infected by district
+with open(folder + 'infectedByDistrict.csv', 'w', newline='') as idbdf:
+    with IncrementalBar(menus.saveInfectedByDistricttext, max= len(infectedByDistrict), suffix = menus.suffix) as bar:
+        idbdfw = csv.writer(idbdf)
+        for row in infectedByDistrict:
+            idbdfw.writerow(row)
+            bar.next()
 
-    with open(folder + 'infectionsByDistrict.csv', 'w', newline='') as isbdf:
-        with IncrementalBar("Saving infectionsByDistrict", max= len(infectedByDistrict), suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
-            isbdfw = csv.writer(isbdf)
-            for row in infectedByDistrict:
-                isbdfw.writerow(row)
-                bar.next()
-
-    # def writeInfectedByDistrict():
-
-    #### Create file with infected by district #### -> new thread
-
-    with open(folder + 'infectedByDistrict.csv', 'w', newline='') as idbdf:
-        with IncrementalBar("Saving infectedByDistrict", max= len(infectedByDistrict), suffix = '%(percent)d%% | %(elapsed_td)s') as bar:
-            idbdfw = csv.writer(idbdf)
-            for row in infectedByDistrict:
-                idbdfw.writerow(row)
-                bar.next()
-
-curses.wrapper(mainMenu)
-run_simulation()
-
-print("Ficheiros criados em: " + str(datetime.timedelta(seconds=(time.time() - start_time))))
+# Print total run time
+print(menus.enlapsedtimetext + str(datetime.timedelta(seconds=(time.time() - start_time))))
+print("Files saved in: " + folder)
