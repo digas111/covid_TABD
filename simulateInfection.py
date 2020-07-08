@@ -23,7 +23,7 @@ subfolder = "/data/"
 
 ##########
 
-infectingDistance = 80
+infectingDistance = 50
 infectingRate = 20 #percentage by frame
 
 # Infected before preventive measures are taken
@@ -55,6 +55,9 @@ infectedID = []
 
 # Saves percentage of infections of each taxi in each frame
 infectionPercentages = []
+
+# Saves r for each hour
+r = []
 
 # Color of each taxi in each frame (corresponde to infection rate)
 colors = []
@@ -224,17 +227,25 @@ for taxi in startingInfected:
 
 # Simulate virus propagation
 with IncrementalBar(menus.simulatevirustext, max= len(offsets)-1, suffix = menus.suffix) as bar:
+    rPercentagesAux = 0
+    hourloop = 0
     for i in range(1,len(offsets)):
         for j in range(0,len(offsets[0])):
             if (offsets[i][j] != [0,0]):
                 if (infectionPercentages[i][j] < 100):
+                    if hourloop == 360:
+                        hourloop = 0
+                        r.append(rPercentagesAux/100/nInfected[i])
+                        rPercentagesAux = 0
                     for ifid in infectedID:
                         dist = int(math.dist(offsets[i][j],offsets[i][ifid]))
                         if (dist < infectingDistance):
                             infectionPercentages[i][j] = infectionPercentages[i-1][j] + infectingRate
+                            rPercentagesAux += infectingRate
                             colors[i][j] = "black"
                     if (infectionPercentages[i][j] >= 100):
                         infectTaxi(i,j)
+        hourloop += 1
         bar.next()
 
 # Save infected by distirct at a given frame
@@ -305,21 +316,24 @@ with open(folder + 'simulateInfection.csv', 'w', newline='') as sif:
             bar.next()
 
 # Create file with number of infected an file with R
-with open(folder + 'infections.csv', 'w', newline='') as nif, open(folder + 'rvalues.csv', 'w', newline='') as rv:
-    with IncrementalBar(menus.saveNInfectedandRtext, max= len(nInfected), suffix = menus.suffix) as bar:
+with open(folder + 'infections.csv', 'w', newline='') as nif:
 
-        nifw = csv.writer(nif)
-        rvw = csv.writer(rv)
+    nifw = csv.writer(nif)
+    nifw.writerow([nInfected[0]])
 
-        nifw.writerow([nInfected[0]])
-        rvw.writerow([0])
-        bar.next()
-
+    with IncrementalBar(menus.saveNInfectedtext, max= len(nInfected)-1, suffix = menus.suffix) as bar:
         for i in range(1,len(nInfected)):
             nifw.writerow([nInfected[i]])
-            rvw.writerow([(nInfected[i]-nInfected[i-1]) / nInfected[i-1]])
             bar.next()
 
+with open(folder + 'rvalues.csv', 'w', newline='') as rv:
+
+    rvw = csv.writer(rv)
+
+    with IncrementalBar(menus.saveRtext, max= len(r), suffix = menus.suffix) as bar:
+        for i in range(0,len(r)):
+            rvw.writerow([r[i]])
+            bar.next()
 
 # Create file with new infections by dristrict 
 with open(folder + 'infectionsByDistrict.csv', 'w', newline='') as isbdf:

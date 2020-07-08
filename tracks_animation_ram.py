@@ -8,6 +8,52 @@ import csv
 from postgis import Polygon,MultiPolygon
 from postgis.psycopg import register
 from textwrap import wrap
+import curses
+import os
+import menus
+
+currentDir = os.path.dirname(os.path.realpath(__file__))
+
+mapsPortugal = currentDir + "/maps/portugal.csv"
+mapsPorto = currentDir + "/maps/porto.csv"
+mapsLisboa = currentDir + "/maps/lisboa.csv"
+
+dataDirectory = currentDir + "/data/"
+
+simulateInfectionCSV = "simulateInfection.csv"
+infectedByDistrictCSV = "infectedByDistrict.csv"
+nInfectedCSV = "infections.csv"
+rValuesCSV = "rvalues.csv"
+
+
+def getDataSettings(stdscr):
+
+    global simulateInfectionCSV
+    global infectedByDistrictCSV
+    global nInfectedCSV
+    global rValuesCSV
+    global dataDirectory
+
+    infectionStart = str(menus.chooseInfectionStart(stdscr, dataDirectory))
+
+    if infectionStart == '0':
+        exit(0)
+    else:
+        dataDirectory = dataDirectory + infectionStart
+
+
+    startingMeasures = str(menus.chooseMeasures(stdscr, dataDirectory))
+
+    if startingMeasures == '0':
+        exit(0)
+    elif startingMeasures != '-1':
+        dataDirectory = dataDirectory + startingMeasures
+
+    simulateInfectionCSV = dataDirectory + simulateInfectionCSV
+    infectedByDistrictCSV = dataDirectory + infectedByDistrictCSV
+    nInfectedCSV = dataDirectory + nInfectedCSV
+    rValuesCSV = dataDirectory + rValuesCSV
+
 
 ts_i = 1570665600
 
@@ -80,17 +126,11 @@ def animate(i, x, nInfected, line, line2, rValues, animationsIndexsHour):
 
 
 scale=1/3000000
-conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
+conn = psycopg2.connect("dbname=postgres user=postgres")
 register(conn)
-
-
-mapsPortugal = "E:\TrabalhoManel\Fac\TABD\covid_TABD\maps\portugal.csv"
-mapsPorto = "E:\TrabalhoManel\Fac\TABD\covid_TABD\maps\porto.csv"
-mapsLisboa = "E:\TrabalhoManel\Fac\TABD\covid_TABD\maps\lisboa.csv"
 
 fig = plt.figure(figsize=(width_in_inches*scale*4, height_in_inches*scale), constrained_layout = True )
 gs = fig.add_gridspec(2,4)
-
 
 #-------------------------------------PLOT DE PORTUGAL----------------------------------------------------------------------
 
@@ -183,17 +223,9 @@ axR.set_title("Gráfico do R", fontsize = 'medium')
 
 #-----------------------------ABERTURA DE FICHEIROS E CHAMADA DE ANIMAÇÃO----------------------------------------------------------------------------------------------
 
-"""
-simulateInfectionCSV = "data/porto&lisboa/simulateInfection.csv"
-infectedByDistrictCSV = "data/porto&lisboa/infectedByDistrict.csv"
-nInfectedCSV = "data/porto&lisboa/infections.csv"
-"""
 
-simulateInfectionCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\data\PortoLisboa\simulateInfection.csv"
-infectedByDistrictCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\data\PortoLisboa\infectedByDistrict.csv"
-nInfectedCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\data\PortoLisboa\infections.csv"
-rValuesCSV = "E:/TrabalhoManel/Fac/TABD/covid_TABD/data/PortoLisboa/rvalues.csv"
-
+# Display the menus to choose data files
+curses.wrapper(getDataSettings)
 
 offsets = []
 colors = []
