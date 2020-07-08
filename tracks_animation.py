@@ -80,7 +80,7 @@ def animate(i):
     
 
 scale=1/3000000
-conn = psycopg2.connect("dbname=postgres user=postgres")
+conn = psycopg2.connect("dbname=tabd user=postgres password=11223344Ab")
 register(conn)
 
 
@@ -101,7 +101,7 @@ axLisboa.set_title("\n".join(wrap("Concelhos: LISBOA, OEIRAS, CASCAIS, SINTRA, A
 
 #-------------------------------------PLOT DE PORTUGAL----------------------------------------------------------------------
 
-with open('maps/portugal.csv', 'r') as csvFile:
+with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\maps\portugal.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
         xs , ys = [],[]
@@ -113,7 +113,7 @@ with open('maps/portugal.csv', 'r') as csvFile:
 
 #------------------------------PLOT DO PORTO--------------------------------------------------------------------------------------------
 
-with open('maps/porto.csv', 'r') as csvFile:
+with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\maps\porto.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
         xs , ys = [],[]
@@ -125,7 +125,7 @@ with open('maps/porto.csv', 'r') as csvFile:
 
 #----------------------------------PLOT DE LISBOA----------------------------------------------------------------------------------------------
 
-with open('maps/lisboa.csv', 'r') as csvFile:
+with open('E:\TrabalhoManel\Fac\TABD\covid_TABD\maps\lisboa.csv', 'r') as csvFile:
     reader = csv.reader(csvFile)
     for row in reader:
         xs , ys = [],[]
@@ -168,9 +168,15 @@ axInfections.set_title("Curva de infeção", fontsize = 'medium')
 
 #-----------------------------ABERTURA DE FICHEIROS E CHAMADA DE ANIMAÇÃO----------------------------------------------------------------------------------------------
 
-simulateInfectionCSV = "data/simulateInfection.csv"
-infectedByDistrictCSV = "data/infectedByDistrict.csv"
-nInfectedCSV = "data/infections.csv"
+
+#simulateInfectionCSV = "data/simulateInfection.csv"
+#infectedByDistrictCSV = "data/infectedByDistrict.csv"
+#nInfectedCSV = "data/infections.csv"
+
+
+simulateInfectionCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\data\porto&lisboa\simulateInfection.csv"
+infectedByDistrictCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\data\porto&lisboa\infectedByDistrict.csv"
+nInfectedCSV = "E:\TrabalhoManel\Fac\TABD\covid_TABD\data\porto&lisboa\infections.csv"
 
 with open(simulateInfectionCSV, 'r') as csvFile, open(infectedByDistrictCSV, 'r') as csvFile2, open(nInfectedCSV, 'r') as csvFile3:
     

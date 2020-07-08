@@ -169,7 +169,7 @@ def menu1(stdscr):
 
 
 
-title2 = "Medidas de precaoção:"
+title2 = "Medidas de precaução:"
 menu2Items = ['Sim','Não','Exit']
 
 def print_menu2(stdscr, selected_row_idx):
